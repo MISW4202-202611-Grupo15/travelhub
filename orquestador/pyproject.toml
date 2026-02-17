@@ -1,0 +1,4 @@
+[project]
+name = "orquestador"
+version = "0.1.0"
+dependencies = ["pika"]

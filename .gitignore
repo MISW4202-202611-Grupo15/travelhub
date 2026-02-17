@@ -1,0 +1,148 @@
+# =========================
+
+# Python
+
+# =========================
+
+**pycache**/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribuciones / builds
+
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+
+*.manifest
+*.spec
+
+# Logs
+
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter
+
+.ipynb_checkpoints
+
+# Environments
+
+.env
+.env.*
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# IDEs
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MyPy
+
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+
+.pyre/
+
+# Ruff / linters
+
+.ruff_cache/
+
+# Pytype
+
+.pytype/
+
+# Cython debug
+
+cython_debug/
+
+# macOS
+
+.DS_Store
+
+# Windows
+
+Thumbs.db
+
+# dotenv
+
+*.env
+
+# Local settings
+
+local_settings.py
+config.local.py
+
+# SQLite
+
+*.sqlite3
+*.db
+
+# FastAPI / Flask instance folders
+
+instance/
+.webassets-cache
+
+# Docker
+
+*.pid
+*.log
+
+# Package managers
+
+poetry.lock
+Pipfile.lock
+
+# Editable installs
+
+*.egg-link
+pip-wheel-metadata/
+
+# Temporary files
+
+tmp/
+temp/
+*.tmp
