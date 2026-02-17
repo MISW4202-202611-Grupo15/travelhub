@@ -39,8 +39,8 @@ def monitorear():
         reiniciar_estado_de_los_componentes()
 
 
-def procesar_echo(routing_key):
-    nombre = routing_key.split(".")[1]  # routing_key = echo.componente_mock_1
+def procesar_echo(pattern, payload):
+    nombre = pattern.split(".")[1]  # pattern = echo.componente_mock_1
     actualizar_estado_componente(nombre, "activo")
 
 

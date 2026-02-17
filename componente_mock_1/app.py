@@ -18,9 +18,11 @@ def main():
                 )
 
             print("Componente mock 1 conectado al orquestador")
-            print("")
 
             orquestador.subscribirse(nombre_exchange, "ping", procesar_ping)
+            print("Componente mock 1 suscrito al ping")
+
+            print("")
 
             while True:
                 print("Componente mock 1 corriendo...")
@@ -35,7 +37,7 @@ def reportar_estado():
     orquestador.subscribirse(nombre_exchange, "ping", procesar_ping)
 
 
-def procesar_ping():
+def procesar_ping(pattern, payload):
     orquestador.publicar(nombre_exchange, "echo.componente_mock_1", None)
 
 
