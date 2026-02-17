@@ -1,52 +1,42 @@
-from event_bus import EventBus
+from orquestador import Orquestador
 import time
 
-tiempo_de_resiliencia = 1
-frecuencia_de_monitoreo = 10
-componentes_a_monitorear = [
-    {"nombre": "componente_mock_1", "estado": "inactivo"},
-    {"nombre": "componente_mock_2", "estado": "inactivo"},
-]
-bus = EventBus()
+amqp_url = "amqps://lhgcccuh:zKo8dpTeDZvuvJIUB_da8uZXX3MeHjen@jackal.rmq.cloudamqp.com/lhgcccuh"
+nombre_exchange = "events"
+orquestador = Orquestador()
+tiempo_de_resiliencia = 3
 
 
 def main():
     while True:
-        bus_inicializado = bus.inicializar()
-        if bus_inicializado:
-            monitorear()
-        else:
-            print("No hay comunicación con el orquestador")
+        try:
+            conectado = orquestador.inicializar(amqp_url, nombre_exchange)
+
+            if not conectado:
+                raise Exception(
+                    "No hay conexión entre el componente mock 2 y el orquestador"
+                )
+
+            print("Componente mock 2 conectado al orquestador")
+            print("")
+
+            orquestador.subscribirse(nombre_exchange, "ping", procesar_ping)
+
+            while True:
+                print("Componente mock 2 corriendo...")
+                time.sleep(1)
+
+        except Exception as e:
+            print("Reintentando conectar el componente mock 2 con el orquestador...")
             time.sleep(tiempo_de_resiliencia)
 
 
-def monitorear():
-    bus.subscribirse(manejar_eventos)
-    while True:
-        bus.publicar("ping", None)
-        time.sleep(frecuencia_de_monitoreo)
-        reportar_componentes_inactivos()
+def reportar_estado():
+    orquestador.subscribirse(nombre_exchange, "ping", procesar_ping)
 
 
-def manejar_eventos(event, data):
-    if event == "echo":
-        actualizar_estado_componente(data["name"], data["estado"])
-
-
-def actualizar_estado_componente(nombre, estado):
-    for componente in componentes_a_monitorear:
-        if componente["nombre"] == nombre:
-            componente["estado"] = estado
-            break
-
-
-def reportar_componentes_inactivos():
-    inactivos = [c for c in componentes_a_monitorear if c["estado"] == "inactivo"]
-    if inactivos:
-        print("Componentes inactivos:")
-        for c in inactivos:
-            print(f"- {c['nombre']}")
-        print(" ")
+def procesar_ping():
+    orquestador.publicar(nombre_exchange, "echo.componente_mock_2", None)
 
 
 main()
