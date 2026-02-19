@@ -1,10 +1,15 @@
 from orquestador import Orquestador
 import time
+import os
 
 amqp_url = "amqps://lhgcccuh:zKo8dpTeDZvuvJIUB_da8uZXX3MeHjen@jackal.rmq.cloudamqp.com/lhgcccuh"
 nombre_exchange = "events"
 orquestador = Orquestador()
 tiempo_de_resiliencia = 3
+
+# Configuración para simular falla
+# Cambiar a True para simular que el componente está caído (no responde a pings)
+SIMULAR_FALLA = os.getenv("SIMULAR_FALLA", "false").lower() == "true"
 
 
 def main():
@@ -25,7 +30,8 @@ def main():
             print("")
 
             while True:
-                print("Componente mock 1 corriendo...")
+                estado = "FALLA SIMULADA - NO RESPONDE" if SIMULAR_FALLA else "corriendo"
+                print(f"Componente mock 1 {estado}...")
                 time.sleep(1)
 
         except Exception as e:
@@ -38,6 +44,10 @@ def reportar_estado():
 
 
 def procesar_ping(pattern, payload):
+    # Si estamos simulando falla, NO responder al ping
+    if SIMULAR_FALLA:
+        return  # No enviar echo
+    
     orquestador.publicar(nombre_exchange, "echo.componente_mock_1", None)
 
 

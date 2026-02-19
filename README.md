@@ -1,8 +1,37 @@
-# Experimento de táctica de arquitectura de detección de fallas para el favocerimiento de la disponibilidad
+# Experimento de táctica de arquitectura de detección de fallas para el favorecimiento de la disponibilidad
 
 ## Objetivo
 
 Este proyecto busca simular el monitoreo de la disponibilidad de microservicios utilizando mensajería asíncrona sin comunicación directa entre los servicios.
+
+## 🆕 Experimento de Detección de Fallas
+
+**Objetivo:** Identificar que el sistema detecta fallas en menos de 10 segundos con mínimo 60 registros.
+
+### Ejecución Rápida
+
+```powershell
+# Terminal 1 - Monitor
+cd monitor
+python app.py
+
+# Terminal 2 - Mock 1
+cd componente_mock_1
+python app.py
+
+# Terminal 3 - Mock 2
+cd componente_mock_2
+python app.py
+
+# Simular falla (detener Mock 1 y reiniciar con):
+$env:SIMULAR_FALLA="true"
+python app.py
+
+# Analizar resultados
+python analizar.py
+```
+
+**Datos:** Se almacenan en `monitor/monitoreo.db` (SQLite)
 
 ---
 
