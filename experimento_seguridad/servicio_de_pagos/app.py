@@ -1,56 +1,78 @@
-from librerias.orquestador.app import Orquestador
+# from librerias.orquestador.app import Orquestador
 from librerias.servicio_de_encripcion.criptology_service import CryptologyService
 import time
 import requests
+import json
+
+BACK_LLAVE_AES_DECRYPT = "MDFBM3g1aTkwTDBXMjg0bA=="
+BACK_IV_AES_DECRYPT="1050701070905080"
+BACK_LLAVE_AES_ENCRYPT="MzQyNHg2NiEyQUxPPXxaUA=="
+BACK_IV_AES_ENCRYPT="2648937582046372"
 
 # Broker config
-orquestador = Orquestador()
-tiempo_de_resiliencia = 3
-amqp_url = "amqps://lhgcccuh:zKo8dpTeDZvuvJIUB_da8uZXX3MeHjen@jackal.rmq.cloudamqp.com/lhgcccuh"
-exchange_name = "events"
+# orquestador = Orquestador()
+# tiempo_de_resiliencia = 3
+# amqp_url = "amqps://lhgcccuh:zKo8dpTeDZvuvJIUB_da8uZXX3MeHjen@jackal.rmq.cloudamqp.com/lhgcccuh"
+# exchange_name = "events"
 
 # Proveedor de pagos api config
 payment_service_url = "http://127.0.0.1:5000/payment"
-sensible_data = (
-    {}
-)  # Juan Cordona / Hector Malagrejo -> Aca se debe poner la data bancaria sensible que se debe encriptar
+sensible_data = {
+    "documento": 10958346721,
+    "banco": "BBVA",
+    "cuenta": 98563627121,
+    "tipo_cuenta": "AHORROS"
+}  # Juan Cordona / Hector Malagrejo -> Aca se debe poner la data bancaria sensible que se debe encriptar
 
 
-def main():
-    while True:
-        try:
-            connected = orquestador.inicializar(amqp_url, exchange_name)
-            if not connected:
-                raise Exception(
-                    "No hay conexión entre el servicio de pagos el orquestador"
-                )
-            print("Servicio de pagos conectado al orquestador")
-            orquestador.subscribirse(exchange_name, "payment_required", request_payment)
-            print("Servicio de pagos suscrito al evento payment_required")
-            print("")
-            while True:
-                print(f"Servicio de pagos corriendo...")
-                time.sleep(1)
-        except Exception as e:
-            print("Reintentando conectar el servicio de pagos con el orquestador...")
-            time.sleep(tiempo_de_resiliencia)
+# def main():
+#     while True:
+#         try:
+#             connected = orquestador.inicializar(amqp_url, exchange_name)
+#             if not connected:
+#                 raise Exception(
+#                     "No hay conexión entre el servicio de pagos el orquestador"
+#                 )
+#             print("Servicio de pagos conectado al orquestador")
+#             orquestador.subscribirse(exchange_name, "payment_required", request_payment)
+#             print("Servicio de pagos suscrito al evento payment_required")
+#             print("")
+#             while True:
+#                 print(f"Servicio de pagos corriendo...")
+#                 time.sleep(1)
+#         except Exception as e:
+#             print("Reintentando conectar el servicio de pagos con el orquestador...")
+#             time.sleep(tiempo_de_resiliencia)
 
 
 def main_1():
     while True:
         print("Teclee la letra p para generar pago o cualquier otra para salir")
-        input = input()
-        if input in ("p", "P"):
+        _input = input()
+        if _input in ("p", "P"):
             request_payment()
         else:
             break
 
 
 def request_payment():
-    encrypted_data = CryptologyService.encrypt(sensible_data)
-    response = requests.post(payment_service_url, encrypted_data)
+    encripcion = CryptologyService(BACK_LLAVE_AES_ENCRYPT)
+    print("**** DATOS SENSIBLES *****")
+    print(sensible_data)
+    encrypted_data = encripcion.encrypt(
+        json.dumps(sensible_data),
+        BACK_LLAVE_AES_ENCRYPT,
+        BACK_IV_AES_ENCRYPT
+    ).decode()
+    print("**** DATOS ENCRIPTADOS *****")
+    print(encrypted_data)
+    payload = {
+        "encrypted_data" : encrypted_data
+    }
+    response = requests.post(payment_service_url, json=payload)
+    print("**** REPUESTA DEL PAGO *****")
     print(response.status_code)
-    print(response.json())
+    print(response.text)
 
 
 if __name__ == "__main__":
