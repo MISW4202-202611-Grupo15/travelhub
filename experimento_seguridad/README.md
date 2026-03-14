@@ -1,152 +1,89 @@
 # Experimento de Seguridad - Sistema de Pagos con Encriptación
 
-## 📋 Descripción del Proyecto
+## Descripción
 
-Este proyecto implementa un **sistema de pagos seguro** que demuestra el uso de encriptación AES (Advanced Encryption Standard) para proteger información bancaria sensible durante su transmisión entre servicios.
+Sistema de pagos que transmite datos bancarios cifrados (AES-CBC) entre servicios. Un script automatizado (`run_security_experiment.py`) inyecta ataques aleatorios y mide la capacidad del sistema para detectarlos, registrando métricas en SQLite y eventos en un servicio de auditoría.
 
-## 🏗️ Arquitectura del Sistema
-
-El proyecto está compuesto por los siguientes componentes:
-
-### 1. **Servicio de Pagos** (`servicio_de_pagos/`)
-- **Rol**: Cliente que solicita pagos
-- **Funcionalidad**: 
-  - Encripta datos bancarios sensibles (documento, banco, cuenta, tipo de cuenta)
-  - Envía la información encriptada al Proveedor de Pagos
-  - Utiliza algoritmo AES con modo CBC para la encriptación
-- **Tecnologías**: Python, requests, CryptologyService
-
-### 2. **Proveedor de Pagos** (`proveedor_de_pagos/`)
-- **Rol**: API REST que procesa pagos
-- **Funcionalidad**:
-  - Recibe datos encriptados vía HTTP POST
-  - Desencripta la información utilizando las claves correspondientes
-  - Procesa el pago con los datos bancarios
-  - Retorna código de estado de la transacción
-- **Tecnologías**: Flask, Python, CryptologyService
-- **Endpoint**: `POST /payment`
-
-### 3. **Servicio de Encriptación** (`librerias/servicio_de_encripcion/`)
-- **Rol**: Librería compartida de criptografía
-- **Funcionalidad**:
-  - Proporciona métodos `encrypt()` y `decrypt()`
-  - Implementa AES-256 en modo CBC
-  - Utiliza padding PKCS7
-  - Genera claves derivadas mediante SHA-256
-- **Tecnologías**: pycryptodome
-
-### 4. **Orquestador** (`librerias/orquestador/`)
-- **Rol**: Librería para comunicación asíncrona (opcional)
-- **Funcionalidad**:
-  - Gestiona conexión con RabbitMQ
-  - Permite publicar y suscribirse a eventos
-  - Facilita comunicación event-driven entre servicios
-- **Tecnologías**: pika (RabbitMQ client)
-
-### 5. **Registro de Auditoría** (`registro_de_auditoria/`)
-- **Rol**: Servicio de auditoría (en desarrollo)
-- **Funcionalidad**: Escucha eventos del sistema para registro de auditoría
-- **Tecnologías**: Python, Orquestador
-
-## 🔐 Flujo de Seguridad
+## Arquitectura
 
 ```
-┌─────────────────────┐
-│ Servicio de Pagos   │
-│                     │
-│ 1. Datos sensibles  │
-│ 2. Encriptar (AES)  │
-└──────────┬──────────┘
-           │ Datos Encriptados
-           │ (Base64)
-           ▼
-┌─────────────────────┐
-│ Proveedor de Pagos  │
-│                     │
-│ 3. Recibir datos    │
-│ 4. Desencriptar     │
-│ 5. Procesar pago    │
-└─────────────────────┘
+servicio_de_pagos/     → Cliente: cifra datos y envía al proveedor
+proveedor_de_pagos/    → API (puerto 5000): recibe, valida token, descifra, detecta ataques
+componente_auditoria/  → API (puerto 5001): registra eventos en SQLite (auditoria.db)
+librerias/
+  servicio_de_encripcion/  → Librería AES encrypt/decrypt
+  orquestador/             → Librería RabbitMQ (opcional)
 ```
 
-### Claves de Encriptación
+## Experimento de Seguridad
 
-El sistema utiliza dos pares de claves AES:
+El script `run_security_experiment.py` ejecuta **60 iteraciones** contra el proveedor de pagos, inyectando aleatoriamente:
 
-**Para Encriptación:**
-- Llave: `MzQyNHg2NiEyQUxPPXxaUA==` (Base64)
-- IV: `2648937582046372`
+| Ataque | Qué hace | Detección |
+|---|---|---|
+| **Tampering** | Corrompe bytes del dato cifrado | Fallo al descifrar → HTTP 400 |
+| **Spoofing** | Envía token de autenticación falso | Token inválido → HTTP 401 |
+| **Sin cifrado** | Envía datos en texto plano | Campo `encrypted_data` ausente → HTTP 400 |
+| **Normal** | Petición legítima (cifrada + token válido) | Pago exitoso → HTTP 201 |
 
-**Para Desencriptación:**
-- Llave: `MDFBM3g1aTkwTDBXMjg0bA==` (Base64)
-- IV: `1050701070905080`
+Cada ataque detectado se registra en el componente de auditoría y las métricas (tipo, tiempo de detección, código HTTP, resultado) se guardan en `resultados_experimento.db`.
 
-> ⚠️ **Nota de Seguridad**: En un sistema de producción, estas claves NUNCA deben estar hardcodeadas en el código. Se deben usar variables de entorno o servicios de gestión de secretos (AWS Secrets Manager, Azure Key Vault, etc.).
-
-## 📦 Dependencias
-
-- **Python 3.8+**
-- **Flask 3.0.2**: Framework web para el proveedor de pagos
-- **requests 2.32.5**: Cliente HTTP para el servicio de pagos
-- **pycryptodome**: Biblioteca de encriptación AES
-- **pika**: Cliente RabbitMQ (para funcionalidad de orquestador)
-
-## 🚀 Instalación y Ejecución
-
-### Paso 1: Instalación de Dependencias
+## Instalación
 
 ```powershell
-# Navegar al directorio del experimento
 cd experimento_seguridad
-
-# Activar entorno virtual (si existe)
-& "..\.venv\Scripts\Activate.ps1"
-
-# Opción A: Instalar todas las dependencias desde el archivo consolidado
 pip install -r requirements.txt
-
-# Opción B: Instalar dependencias por componente
-pip install pycryptodome  # Servicio de encriptación
-pip install Flask==3.0.2  # Proveedor de pagos
-pip install requests==2.32.5  # Servicio de pagos
-pip install pika  # Orquestador (opcional)
 ```
 
-### Paso 2: Ejecución del Sistema
+## Ejecución del Experimento
 
-**Terminal 1 - Iniciar Proveedor de Pagos (API)**
 ```powershell
-cd proveedor_de_pagos
-python app.py
+python run_security_experiment.py
 ```
-La API estará disponible en `http://127.0.0.1:5000`
 
-**Terminal 2 - Ejecutar Servicio de Pagos (Cliente)**
+Esto levanta automáticamente los servidores (proveedor de pagos en puerto 5000, auditoría en puerto 5001), ejecuta las 60 iteraciones y muestra el resumen en consola.
+
+### Salida esperada
+
+```
+#    Tipo            Detectado    Tiempo(ms)   HTTP
+-----------------------------------------------------
+1    spoofing        Sí           138.0        401
+2    tampering       Sí           32.28        400
+3    normal          N/A          72.59        201
+...
+
+============================================================
+RESUMEN DEL EXPERIMENTO DE SEGURIDAD
+============================================================
+Total iteraciones:      60
+Peticiones normales:    15  (exitosas: 15)
+Ataques inyectados:     45  (detectados: 45/45)
+  tampering      : 15/15 detectados, promedio 63.6 ms
+  spoofing       : 16/16 detectados, promedio 88.1 ms
+  sin_cifrado    : 14/14 detectados, promedio 61.1 ms
+============================================================
+```
+
+## Consultar resultados
+
+**Base de datos de métricas** → `resultados_experimento.db` (tabla `resultados`)
+
+**Auditoría** → Levantar el servicio y consultar con Postman o curl:
 ```powershell
-cd servicio_de_pagos
-python app.py
+python componente_auditoria/app.py
+# GET http://127.0.0.1:5001/audit
 ```
-Presionar `p` para generar un pago de prueba
 
-## 🧪 Pruebas del Sistema
+## Ejecución manual (sin experimento)
 
-1. **Iniciar el Proveedor de Pagos** (Terminal 1):
-   ```powershell
-   cd proveedor_de_pagos
-   python app.py
-   ```
-   Verifica que el servidor Flask inicie en `http://127.0.0.1:5000`
+```powershell
+# Terminal 1: Proveedor de pagos
+python proveedor_de_pagos/app.py
 
-2. **Ejecutar Servicio de Pagos** (Terminal 2):
-   ```powershell
-   cd servicio_de_pagos
-   python app.py
-   ```
-   - Presiona `p` cuando se solicite
-   - Observarás:
-     - ✓ Datos sensibles originales
-     - ✓ Datos encriptados (Base64)
-     - ✓ Respuesta del servidor (código 201 si fue exitoso)
+# Terminal 2: Servicio de pagos (presionar 'p' para generar pago)
+python servicio_de_pagos/app.py
+```
 
 3. **Verificar Logs**:
    - En el Terminal 1 (Proveedor de Pagos) verás:
@@ -217,7 +154,6 @@ pip install -r requirements.txt
 
 ## 📝 Notas Importantes
 
-- Este es un **proyecto educativo** para demostrar conceptos de seguridad
-- **NO usar en producción** sin implementar las mejoras de seguridad necesarias
+- Este es un **proyecto educativo** para demostrar conceptos de seguridad.
 - Las claves están expuestas con fines demostrativos únicamente
 - En producción, usar protocolos seguros (HTTPS/TLS) y gestión adecuada de secretos
