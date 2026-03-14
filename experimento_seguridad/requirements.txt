@@ -1,0 +1,14 @@
+# Dependencias consolidadas del Experimento de Seguridad
+# Sistema de Pagos con Encriptación
+
+# API Web Framework
+Flask==3.0.2
+
+# Cliente HTTP
+requests==2.32.5
+
+# Criptografía
+pycryptodome
+
+# Mensajería (Opcional - para funcionalidad de orquestador)
+pika
