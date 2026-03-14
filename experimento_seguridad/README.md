@@ -43,7 +43,7 @@ python run_security_experiment.py
 
 Esto levanta automáticamente los servidores (proveedor de pagos en puerto 5000, auditoría en puerto 5001), ejecuta las 60 iteraciones y muestra el resumen en consola.
 
-### Salida esperada
+### Ejemplo de salida
 
 ```
 #    Tipo            Detectado    Tiempo(ms)   HTTP
@@ -84,76 +84,3 @@ python proveedor_de_pagos/app.py
 # Terminal 2: Servicio de pagos (presionar 'p' para generar pago)
 python servicio_de_pagos/app.py
 ```
-
-3. **Verificar Logs**:
-   - En el Terminal 1 (Proveedor de Pagos) verás:
-     - Datos encriptados recibidos
-     - Datos desencriptados
-     - Confirmación de pago realizado
-
-## 📊 Ejemplo de Ejecución
-
-**Servicio de Pagos (Cliente):**
-```
-**** DATOS SENSIBLES *****
-{'documento': 10958346721, 'banco': 'BBVA', 'cuenta': 98563627121, 'tipo_cuenta': 'AHORROS'}
-
-**** DATOS ENCRIPTADOS *****
-aG9sYSBtdW5kbyBlbmNyaXB0YWRv...
-
-**** REPUESTA DEL PAGO *****
-201
-Pago realizado
-```
-
-**Proveedor de Pagos (API):**
-```
-Esta es la información encriptada
-{'encrypted_data': 'aG9sYSBtdW5kbyBlbmNyaXB0YWRv...'}
-
-Esta es la información desencriptada
-{'documento': 10958346721, 'banco': 'BBVA', 'cuenta': 98563627121, 'tipo_cuenta': 'AHORROS'}
-
-127.0.0.1 - - [14/Mar/2026 10:30:45] "POST /payment HTTP/1.1" 201 -
-```
-
-## 🎯 Objetivos del Experimento
-
-1. **Demostrar encriptación end-to-end** de datos sensibles
-2. **Implementar AES-256** con modo CBC y padding adecuado
-3. **Separar responsabilidades** entre cliente y servidor
-4. **Validar transmisión segura** de información bancaria
-5. **Mostrar buenas prácticas** de seguridad en microservicios
-
-## 🔧 Posibles Mejoras
-
-- Implementar gestión de claves mediante variables de entorno
-- Agregar autenticación JWT entre servicios
-- Implementar registro de auditoría completo
-- Agregar validaciones de datos antes del procesamiento
-- Implementar manejo de errores más robusto
-- Agregar tests unitarios y de integración
-- Implementar rate limiting en la API
-- Usar HTTPS para la comunicación
-
-## ⚠️ Solución de Problemas
-
-**Error: "ModuleNotFoundError"**
-```powershell
-pip install -r requirements.txt
-```
-
-**Error: "Puerto 5000 en uso"**
-- Cierra otras aplicaciones usando el puerto 5000
-- O modifica el puerto en `proveedor_de_pagos/app.py` cambiando `app.run(debug=True, port=NUEVO_PUERTO)`
-
-**Error: "Connection refused"**
-- Verifica que el Proveedor de Pagos esté ejecutándose
-- Espera unos segundos para que el servidor Flask inicie completamente
-- Verifica que la URL sea correcta: `http://127.0.0.1:5000`
-
-## 📝 Notas Importantes
-
-- Este es un **proyecto educativo** para demostrar conceptos de seguridad.
-- Las claves están expuestas con fines demostrativos únicamente
-- En producción, usar protocolos seguros (HTTPS/TLS) y gestión adecuada de secretos
