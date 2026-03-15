@@ -28,6 +28,18 @@ El script `run_security_experiment.py` ejecuta **60 iteraciones** contra el prov
 
 Cada ataque detectado se registra en el componente de auditoría y las métricas (tipo, tiempo de detección, código HTTP, resultado) se guardan en `resultados_experimento.db`.
 
+## Conceptos de Seguridad
+
+- **Tampering (manipulación):** Alteración no autorizada de datos en tránsito. Un atacante intercepta el mensaje cifrado y modifica bytes, corrompiendo la información. El sistema lo detecta porque el descifrado falla al no poder reconstruir los datos originales.
+
+- **Spoofing (suplantación):** Un atacante se hace pasar por un usuario o servicio legítimo enviando credenciales falsas (tokens, identidades). El sistema lo detecta validando el token de autenticación contra el valor esperado.
+
+- **Canal no cifrado:** Envío de datos sensibles en texto plano sin aplicar cifrado. Cualquier intermediario puede leer la información directamente. El sistema lo detecta verificando que el campo `encrypted_data` esté presente y contenga datos cifrados.
+
+- **Cifrado AES-CBC:** Algoritmo de encriptación simétrica (Advanced Encryption Standard) en modo CBC (Cipher Block Chaining). Usa una llave secreta compartida y un vector de inicialización (IV) para cifrar los datos en bloques encadenados, garantizando confidencialidad en la transmisión.
+
+- **Auditoría:** Registro sistemático de eventos de seguridad (ataques detectados, pagos exitosos) en una base de datos, permitiendo análisis posterior y trazabilidad de incidentes.
+
 ## Instalación
 
 ```powershell

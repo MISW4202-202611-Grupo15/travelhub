@@ -51,6 +51,8 @@ def init_db():
             detectado       INTEGER,
             tiempo_ms       REAL,
             codigo_http     INTEGER,
+            datos_antes     TEXT,
+            datos_despues   TEXT,
             detalle         TEXT,
             timestamp       TEXT
         )"""
@@ -67,32 +69,42 @@ def _encrypt(data):
 
 def build_normal():
     """Petición legítima: cifrada + token válido."""
-    payload = {"encrypted_data": _encrypt(SENSIBLE_DATA)}
+    antes = json.dumps(SENSIBLE_DATA)
+    encrypted = _encrypt(SENSIBLE_DATA)
+    despues = json.dumps({"encrypted_data": encrypted, "token": VALID_TOKEN})
+    payload = {"encrypted_data": encrypted}
     headers = {"X-Auth-Token": VALID_TOKEN}
-    return payload, headers
+    return payload, headers, antes, despues
 
 
 def build_tampering():
     """Dato cifrado pero corrompido (bytes alterados)."""
+    antes = json.dumps(SENSIBLE_DATA)
     enc = _encrypt(SENSIBLE_DATA)
     corrupted = enc[:10] + "XXXX" + enc[14:]
+    despues = json.dumps({"encrypted_data": corrupted, "nota": "bytes alterados"})
     payload = {"encrypted_data": corrupted}
     headers = {"X-Auth-Token": VALID_TOKEN}
-    return payload, headers
+    return payload, headers, antes, despues
 
 
 def build_spoofing():
     """Token falso simulando suplantación de identidad."""
-    payload = {"encrypted_data": _encrypt(SENSIBLE_DATA)}
+    antes = json.dumps(SENSIBLE_DATA)
+    encrypted = _encrypt(SENSIBLE_DATA)
+    despues = json.dumps({"encrypted_data": encrypted, "token": "token-falso-atacante"})
+    payload = {"encrypted_data": encrypted}
     headers = {"X-Auth-Token": "token-falso-atacante"}
-    return payload, headers
+    return payload, headers, antes, despues
 
 
 def build_unencrypted():
     """Datos sensibles enviados en texto plano (sin cifrar)."""
-    payload = SENSIBLE_DATA.copy()  # sin campo encrypted_data
+    antes = json.dumps(SENSIBLE_DATA)
+    despues = json.dumps({"datos_planos": SENSIBLE_DATA, "nota": "sin cifrar"})
+    payload = SENSIBLE_DATA.copy()
     headers = {"X-Auth-Token": VALID_TOKEN}
-    return payload, headers
+    return payload, headers, antes, despues
 
 
 ATTACKS = {
@@ -106,7 +118,7 @@ ATTACKS = {
 # ── Ejecución de iteraciones ──────────────────────────────────
 def run_iteration(iteration):
     attack_type = random.choice(list(ATTACKS.keys()))
-    payload, headers = ATTACKS[attack_type]()
+    payload, headers, antes, despues = ATTACKS[attack_type]()
 
     start = time.perf_counter()
     try:
@@ -130,6 +142,8 @@ def run_iteration(iteration):
         "detectado": detected,
         "tiempo_ms": round(elapsed, 2),
         "codigo_http": code,
+        "datos_antes": antes,
+        "datos_despues": despues,
         "detalle": detail,
         "timestamp": datetime.now().isoformat(),
     }
@@ -221,8 +235,8 @@ def main():
         r = run_iteration(i)
         results.append(r)
         conn.execute(
-            "INSERT INTO resultados (iteracion,tipo_ataque,detectado,tiempo_ms,codigo_http,detalle,timestamp) VALUES (?,?,?,?,?,?,?)",
-            (r["iteracion"], r["tipo_ataque"], r["detectado"], r["tiempo_ms"], r["codigo_http"], r["detalle"], r["timestamp"]),
+            "INSERT INTO resultados (iteracion,tipo_ataque,detectado,tiempo_ms,codigo_http,datos_antes,datos_despues,detalle,timestamp) VALUES (?,?,?,?,?,?,?,?,?)",
+            (r["iteracion"], r["tipo_ataque"], r["detectado"], r["tiempo_ms"], r["codigo_http"], r["datos_antes"], r["datos_despues"], r["detalle"], r["timestamp"]),
         )
         conn.commit()
 
