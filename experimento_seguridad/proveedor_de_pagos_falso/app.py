@@ -9,10 +9,10 @@ from librerias.servicio_de_encripcion.criptology_service import CryptologyServic
 
 app = Flask(__name__)
 
-BACK_LLAVE_AES_DECRYPT = "MDFBM3g1aTkwTDBXMjg0bA=="
-BACK_IV_AES_DECRYPT = "1050701070905080"
-BACK_LLAVE_AES_ENCRYPT = "MzQyNHg2NiEyQUxPPXxaUA=="
-BACK_IV_AES_ENCRYPT = "2648937582046372"
+BACK_LLAVE_AES_DECRYPT = "MDFBM3g1aTkwTDBXMjg0bA==1112"
+BACK_IV_AES_DECRYPT = "105070107090531231280"
+BACK_LLAVE_AES_ENCRYPT = "MzQyNHg2NiEyQUxPPXxaUA==!!!!!"
+BACK_IV_AES_ENCRYPT = "264893758204633123172"
 
 VALID_TOKEN = "tok-seguro-2024"
 AUDIT_URL = "http://127.0.0.1:5001/audit"
@@ -56,5 +56,5 @@ def create_payment():
 
 # Ejecutar la app
 if __name__ == "__main__":
-    app.run(debug=True)
-    # app.run(host="127.0.0.1", port=5000)
+    # app.run(debug=True)
+    app.run(host="127.0.0.1", port=5001)
