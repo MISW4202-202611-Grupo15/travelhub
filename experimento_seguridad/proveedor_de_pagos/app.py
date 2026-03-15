@@ -2,6 +2,7 @@ import sys
 import os
 from flask import request, Flask, jsonify
 import json
+import requests as http_client
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -18,9 +19,20 @@ VALID_TOKEN = "tok-seguro-2024"
 AUDIT_URL = "http://127.0.0.1:5001/audit"
 
 
-def log_audit(person_id, mensaje):
+def encrypt_message(mensaje):
+    svc = CryptologyService(BACK_LLAVE_AES_ENCRYPT)
+    return svc.encrypt(mensaje, BACK_LLAVE_AES_ENCRYPT, BACK_IV_AES_ENCRYPT).decode()
+
+
+def log_audit(person_id, mensaje, ip="desconocida"):
     try:
-        request.post(AUDIT_URL, json={"person_id": str(person_id), "message": mensaje}, timeout=2)
+        mensaje_con_ip = f"[IP:{ip}] {mensaje}"
+        mensaje_cifrado = encrypt_message(mensaje_con_ip)
+        http_client.post(
+            AUDIT_URL,
+            json={"person_id": str(person_id), "message": mensaje_cifrado},
+            timeout=2,
+        )
     except Exception:
         pass
 
@@ -28,17 +40,19 @@ def log_audit(person_id, mensaje):
 # Registrar pago
 @app.route("/payment", methods=["POST"])
 def create_payment():
+    client_ip = request.remote_addr or "desconocida"
+
     # 1. Detección de spoofing: validar token de autenticación
     token = request.headers.get("X-Auth-Token")
     if token != VALID_TOKEN:
-        log_audit("desconocido", "SPOOFING_DETECTED: token inválido o ausente")
+        log_audit("desconocido", "SPOOFING_DETECTED: token inválido o ausente", client_ip)
         return jsonify({"error": "spoofing_detected", "detalle": "Token inválido"}), 401
 
     # 2. Detección de canal no cifrado: validar campo encrypted_data
     body = request.json or {}
     encrypted_field = body.get("encrypted_data")
     if not isinstance(encrypted_field, str) or not encrypted_field:
-        log_audit("desconocido", "UNENCRYPTED_DETECTED: datos enviados sin cifrar")
+        log_audit("desconocido", "UNENCRYPTED_DETECTED: datos enviados sin cifrar", client_ip)
         return jsonify({"error": "unencrypted_detected", "detalle": "Datos sin cifrar"}), 400
 
     # 3. Detección de tampering: intentar descifrar
@@ -47,10 +61,10 @@ def create_payment():
         decrypted_data = json.loads(
             desencripcion.decrypt(encrypted_field, BACK_LLAVE_AES_ENCRYPT, BACK_IV_AES_ENCRYPT)
         )
-        log_audit(decrypted_data.get("documento", "N/A"), "PAYMENT_OK: pago procesado")
+        log_audit(decrypted_data.get("documento", "N/A"), "PAYMENT_OK: pago procesado", client_ip)
         return jsonify({"status": "ok", "detalle": "Pago realizado"}), 201
     except Exception as e:
-        log_audit("desconocido", f"TAMPERING_DETECTED: datos alterados - {e}")
+        log_audit("desconocido", f"TAMPERING_DETECTED: datos alterados - {e}", client_ip)
         return jsonify({"error": "tampering_detected", "detalle": "Datos alterados o corruptos"}), 400
 
 

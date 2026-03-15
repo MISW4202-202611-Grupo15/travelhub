@@ -194,6 +194,29 @@ def print_summary(results):
     except Exception:
         pass
 
+    # ── Verificación de SLAs ───────────────────────────────────
+    print(f"\n{'─' * 60}")
+    print("VERIFICACIÓN DE SLAs")
+    print(f"{'─' * 60}")
+
+    # SLA 1: Procesamiento de pago <= 3000 ms (percentil 95)
+    if normals:
+        tiempos_pago = sorted([r["tiempo_ms"] for r in normals])
+        idx_p95 = int(len(tiempos_pago) * 0.95)
+        p95_pago = tiempos_pago[min(idx_p95, len(tiempos_pago) - 1)]
+        cumple_pago = "CUMPLE" if p95_pago <= 3000 else "NO CUMPLE"
+        print(f"  Pago (P95 <= 3000 ms):       P95 = {p95_pago:.1f} ms  {cumple_pago}")
+
+    # SLA 2: Detección de fraude < 2000 ms (100%)
+    if attacks:
+        tiempos_fraude = [r["tiempo_ms"] for r in attacks]
+        max_fraude = max(tiempos_fraude)
+        sobre_sla = sum(1 for t in tiempos_fraude if t >= 2000)
+        cumple_fraude = "CUMPLE" if sobre_sla == 0 else "NO CUMPLE"
+        print(f"  Fraude (100% < 2000 ms):     máx = {max_fraude:.1f} ms  {cumple_fraude}")
+        if sobre_sla > 0:
+            print(f"    → {sobre_sla} iteraciones excedieron 2000 ms")
+
     print(f"{'=' * 60}")
 
 

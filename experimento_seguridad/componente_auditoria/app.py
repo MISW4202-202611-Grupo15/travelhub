@@ -10,7 +10,7 @@ DB_PATH = Path(__file__).resolve().parent / "auditoria.db"
 
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
